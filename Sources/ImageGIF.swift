@@ -29,7 +29,7 @@
 
 final public class SGLImageDecoderGIF : SGLImageDecoder {
 
-    override public class func test(l: SGLImageLoader) -> Bool
+    override public class func test(_ l: SGLImageLoader) -> Bool
     {
         if read32be(l) != chars("GIF8") {
             return false
@@ -42,21 +42,21 @@ final public class SGLImageDecoderGIF : SGLImageDecoder {
     }
 
 
-    private var flags = 0
-    private var pal = [(r:UInt8,g:UInt8,b:UInt8,a:UInt8)]()
-    private var codes = [(prefix:Int, first:UInt8, suffix:UInt8)]()
-    private var transparent = -1
-    private var lzw_cs = 0
-    private var clear = 0
-    private var avail = 0
-    private var codesize = 0
-    private var codemask = 0
-    private var oldcode = -1
-    private var first = true
-    private var valid_bits = 0
-    private var len = 0
-    private var bits = 0
-    private var out = [UInt8]()
+    fileprivate var flags = 0
+    fileprivate var pal = [(r:UInt8,g:UInt8,b:UInt8,a:UInt8)]()
+    fileprivate var codes = [(prefix:Int, first:UInt8, suffix:UInt8)]()
+    fileprivate var transparent = -1
+    fileprivate var lzw_cs = 0
+    fileprivate var clear = 0
+    fileprivate var avail = 0
+    fileprivate var codesize = 0
+    fileprivate var codemask = 0
+    fileprivate var oldcode = -1
+    fileprivate var first = true
+    fileprivate var valid_bits = 0
+    fileprivate var len = 0
+    fileprivate var bits = 0
+    fileprivate var out = [UInt8]()
 
 
     override public func info()
@@ -72,8 +72,8 @@ final public class SGLImageDecoderGIF : SGLImageDecoder {
         xsize = read16le()
         ysize = read16le()
         flags = read8()
-        read8() // discard background index
-        read8() // discard pixel ratio
+        _ = read8() // discard background index
+        _ = read8() // discard pixel ratio
 
         if (flags & 0x80 != 0) {
             loadColorTable(count: 2 << (flags & 7))
@@ -117,7 +117,7 @@ final public class SGLImageDecoderGIF : SGLImageDecoder {
                     let len = read8()
                     if len == 4 {
                         let eflags = read8()
-                        read16le() // discard delay
+                        _ = read16le() // discard delay
                         transparent = read8()
                         if eflags & 0x01 == 0 {
                             transparent = -1
@@ -142,7 +142,7 @@ final public class SGLImageDecoderGIF : SGLImageDecoder {
     }
 
 
-    override public func load<T:SGLImageType>(img:T)
+    override public func load<T:SGLImageType>(_ img:T)
     {
         var cur_y = 0
         var step = 1
@@ -167,7 +167,7 @@ final public class SGLImageDecoderGIF : SGLImageDecoder {
         codemask = (1 << codesize) - 1
 
         codes = [(prefix:Int, first:UInt8, suffix:UInt8)](
-            count: 4096, repeatedValue:(0,0,0)
+            repeating: (0,0,0), count: 4096
         )
 
         for init_code in 0 ..< clear {
@@ -199,9 +199,9 @@ final public class SGLImageDecoderGIF : SGLImageDecoder {
     }
 
 
-    private func loadColorTable(count count:Int)
+    fileprivate func loadColorTable(count:Int)
     {
-        pal.removeAll(keepCapacity: true)
+        pal.removeAll(keepingCapacity: true)
         pal.reserveCapacity(count)
         for _ in 0 ..< count {
             let r = loader.readUInt8()

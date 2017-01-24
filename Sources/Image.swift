@@ -37,13 +37,13 @@ import Foundation
 // Integers are sRGB and floats are HDR.
 
 public protocol SGLImageType {
-    typealias Element
+    associatedtype Element
     var width:Int {get}
     var height:Int {get}
     var channels:Int {get}
     var rowsize:Int {get}
     func withUnsafeMutableBufferPointer(
-        @noescape body: (UnsafeMutableBufferPointer<Element>) throws -> Void
+        _ body: (UnsafeMutableBufferPointer<Element>) throws -> Void
     ) rethrows
 }
 
@@ -55,6 +55,8 @@ extension SGLImageType {
 
 // Example using an array of tuples. You could use arrays of vectors too.
 final public class SGLImageRGBA8 : SGLImageType {
+    public typealias Element = UInt8
+
     public let width:Int, height:Int, channels:Int
     public var array:[(r:UInt8,g:UInt8,b:UInt8,a:UInt8)]
 
@@ -64,7 +66,7 @@ final public class SGLImageRGBA8 : SGLImageType {
         self.channels = 4
         precondition(width > 0 && width < 0xffff)
         precondition(height > 0 && height < 0xffff)
-        array = [(r:UInt8,g:UInt8,b:UInt8,a:UInt8)](count: width*height*channels, repeatedValue: (0,0,0,0))
+        array = [(r:UInt8,g:UInt8,b:UInt8,a:UInt8)](repeating: (0,0,0,0), count: width*height*channels)
     }
 
     public convenience init(_ loader:SGLImageLoader) {
@@ -73,10 +75,10 @@ final public class SGLImageRGBA8 : SGLImageType {
         loader.load(self)
     }
 
-    public func withUnsafeMutableBufferPointer(@noescape body: (UnsafeMutableBufferPointer<UInt8>) throws -> Void) rethrows {
+    public func withUnsafeMutableBufferPointer(_ body: (UnsafeMutableBufferPointer<UInt8>) throws -> Void) rethrows {
         try array.withUnsafeMutableBufferPointer(){
             // This is unsafe reinterpret cast. Be careful here.
-            let st = UnsafeMutablePointer<UInt8>($0.baseAddress)
+            let st = UnsafeMutableRawPointer($0.baseAddress!).assumingMemoryBound(to: UInt8.self)
             try body(UnsafeMutableBufferPointer<UInt8>(start: st, count: $0.count*channels))
         }
     }
@@ -98,9 +100,11 @@ final public class SGLImageRGBA8 : SGLImageType {
 
 
 // Generic image container.
-public class SGLImage<T> : SGLImageType {
-    public let width:Int, height:Int, channels:Int
-    private let buffer:UnsafeMutableBufferPointer<T>
+open class SGLImage<T> : SGLImageType {
+    public typealias Element = T
+
+    open let width:Int, height:Int, channels:Int
+    fileprivate let buffer:UnsafeMutableBufferPointer<T>
 
     public init(width:Int, height:Int, channels:Int) {
 //        // There's no AnyObject on Linux. How do we enforce value types?
@@ -111,19 +115,19 @@ public class SGLImage<T> : SGLImageType {
         precondition(width > 0 && width < 0xffff)
         precondition(height > 0 && height < 0xffff)
         precondition(channels > 0 && channels <= 4)
-        let ptr = UnsafeMutablePointer<T>.alloc(width*height*channels)
+        let ptr = UnsafeMutablePointer<T>.allocate(capacity: width*height*channels)
         buffer = UnsafeMutableBufferPointer<T>(start: ptr, count: width * height * channels)
     }
 
     deinit {
-        buffer.baseAddress.dealloc(buffer.count)
+        buffer.baseAddress?.deallocate(capacity: buffer.count)
     }
 
-    public func withUnsafeMutableBufferPointer(@noescape body: (UnsafeMutableBufferPointer<T>) throws -> Void) rethrows {
+    open func withUnsafeMutableBufferPointer(_ body: (UnsafeMutableBufferPointer<T>) throws -> Void) rethrows {
         try withExtendedLifetime(self) { try body(buffer) }
     }
 
-    public subscript(x:Int, y:Int, channel:Int) -> T {
+    open subscript(x:Int, y:Int, channel:Int) -> T {
         get {
             precondition(x > 0 && x < width)
             precondition(y > 0 && y < height)
