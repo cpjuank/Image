@@ -76,7 +76,7 @@ final public class SGLImageLoader {
     public var flipVertical:Bool = SGLImageLoader.flipVertical
 
     // Needs to be NSInputStream eventually...
-    fileprivate var input:Data
+    fileprivate var input:NSData
     fileprivate var inputPos = 0
     fileprivate var buf = [UInt8]()
     fileprivate var bufPos = 0
@@ -86,12 +86,12 @@ final public class SGLImageLoader {
     // NSInputStream is available on Linux.
     public init(fromFile filename:String) {
         do {
-            try input = Data(contentsOf: URL(fileURLWithPath: filename),
+            try input = NSData(contentsOf: URL(fileURLWithPath: filename),
                 options: [.uncached, .alwaysMapped])
         }
         catch let error as NSError {
             self.error = error.localizedFailureReason
-            input = Data()
+            input = NSData()
             return
         }
 
@@ -120,7 +120,7 @@ final public class SGLImageLoader {
         decoder!.load(img)
         // Release some things early
         decoder = nil
-        input = Data()
+        input = NSData()
         buf = [UInt8]()
     }
 
@@ -137,7 +137,7 @@ final public class SGLImageLoader {
             bufPos -= bufSize
         }
         let start = inputPos - inputPos % bufSize
-        let length = min(bufSize, input.count - start)
+        let length = min(bufSize, input.length - start)
         if length <= 0 {
             // all eof errors come here
             fatalError()
@@ -150,7 +150,7 @@ final public class SGLImageLoader {
         }
         buf.withUnsafeMutableBufferPointer(){
             let r = NSRange(location: start, length: length)
-            (input as! NSData).getBytes($0.baseAddress!, range: r)
+            input.getBytes($0.baseAddress!, range: r)
         }
     }
 
