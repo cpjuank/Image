@@ -150,7 +150,7 @@ final public class SGLImageLoader {
         }
         buf.withUnsafeMutableBufferPointer(){
             let r = NSRange(location: start, length: length)
-            (input as NSData).getBytes($0.baseAddress!, range: r)
+            (input as! NSData).getBytes($0.baseAddress!, range: r)
         }
     }
 
