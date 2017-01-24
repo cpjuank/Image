@@ -220,7 +220,7 @@ private final class Inflate
     func stored() throws
     {
         // Drain buffer up to byte alignment
-        try bits(bitsCount % 8)
+        try _ = bits(bitsCount % 8)
         var len = try UInt16(bits(8))
         len |= try UInt16(bits(8)) << 8
         var notLen = try UInt16(bits(8))
