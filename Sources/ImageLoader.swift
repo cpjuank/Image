@@ -85,7 +85,7 @@ final public class SGLImageLoader {
     // Initialization API is a bit unstable until
     // NSInputStream is available on Linux.
     public init(fromFile filename:String) {
-        do {
+        /*do {
             try input = NSData(contentsOf: URL(fileURLWithPath: filename),
                 options: [.uncached, .alwaysMapped])
         }
@@ -93,7 +93,19 @@ final public class SGLImageLoader {
             self.error = error.localizedFailureReason
             input = NSData()
             return
+        }*/
+
+        do {
+            try input = NSData(contentsOf: URL(fileURLWithPath: filename),
+                options: [.uncached, .alwaysMapped])
+        } catch {
+            if let nserror = error as? NSError {
+              self.error = nserror.localizedFailureReason
+            }
+            input = NSData()
+            return
         }
+
 
         for dec in SGLImageLoader.decoders {
             if dec.test(self) {
